@@ -2,6 +2,12 @@
 using System.Text.Json;
 using System.Text;
 
+public class FileChangeInfo
+{
+    public string Path { get; set; } = string.Empty;
+    public string ChangeType { get; set; } = string.Empty;
+}
+
 public class AzureDevOpsService
 {
     private readonly string _org, _project, _pat;
@@ -78,5 +84,73 @@ public class AzureDevOpsService
             var error = await response.Content.ReadAsStringAsync();
             Console.WriteLine($"Failed to update state of task {taskId} to '{newState}': {response.StatusCode} - {error}");
         }
+    }
+
+    public async Task<List<FileChangeInfo>> GetAllFileChangesInPullRequestAsync(int pullRequestId)
+    {
+        int top = 100;
+        int skip = 0;
+        bool hasMore = true;
+
+        var allChanges = new List<FileChangeInfo>();
+
+        while (hasMore)
+        {
+            var url = $"https://dev.azure.com/{_org}/{_project}/_apis/git/repositories/{_project}/pullRequests/{pullRequestId}/iterations/1/changes?$top={top}&$skip={skip}&api-version=7.0";
+
+            var response = await _client.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Failed to get changes for PR {pullRequestId}: {response.StatusCode} - {error}");
+                break;
+            }
+
+            using var stream = await response.Content.ReadAsStreamAsync();
+            using var doc = await JsonDocument.ParseAsync(stream);
+
+            if (!doc.RootElement.TryGetProperty("changeEntries", out JsonElement changeEntries))
+            {
+                break;
+            }
+
+            int count = 0;
+
+            foreach (var change in changeEntries.EnumerateArray())
+            {
+                string changeType = change.GetProperty("changeType").GetString() ?? string.Empty;
+                string? path = null;
+
+                //Try extracting path safely:
+                if (change.TryGetProperty("item", out JsonElement item))
+                {
+                    if (item.TryGetProperty("path", out var pathElem))
+                    {
+                        path = pathElem.GetString() ?? string.Empty;
+                    }
+                }
+
+                //Still null? Try fallback from sourceServerItem or originalPath (rare):
+                if (path == null && change.TryGetProperty("sourceServerItem", out var sourceItem))
+                {
+                    path = sourceItem.GetString() ?? string.Empty;
+                }
+
+                if (path != null)
+                {
+                    allChanges.Add(new FileChangeInfo
+                    {
+                        Path = path,
+                        ChangeType = changeType,
+                    });
+                    count++;
+                }
+            }
+
+            hasMore = count == top;
+            skip += top;
+        }
+
+        return allChanges;
     }
 }
