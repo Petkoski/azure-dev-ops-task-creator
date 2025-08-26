@@ -15,14 +15,17 @@ foreach (var line in lines)
 {
     try
     {
-        TaskLine? task = TaskLine.Parse(line);
-        int? createdTaskId = await devOpsService.CreateTaskAsync(task);
-
-        if (createdTaskId.HasValue
-            && !string.IsNullOrWhiteSpace(task.State)
-            && task.State != "New")
+        if (!string.IsNullOrWhiteSpace(line))
         {
-            await devOpsService.UpdateTaskStateAsync(createdTaskId.Value, task.State);
+            TaskLine? task = TaskLine.Parse(line);
+            int? createdTaskId = await devOpsService.CreateTaskAsync(task);
+
+            if (createdTaskId.HasValue
+                && !string.IsNullOrWhiteSpace(task.State)
+                && task.State != "New")
+            {
+                await devOpsService.UpdateTaskStateAsync(createdTaskId.Value, task.State);
+            }
         }
     }
     catch (Exception ex)

@@ -35,6 +35,7 @@ public class AzureDevOpsService
             new { op = "add", path = "/fields/Microsoft.VSTS.Scheduling.RemainingWork", value = task.RemainingWork },
             new { op = "add", path = "/fields/System.Tags", value = string.Join(";", task.Tags) },
             new { op = "add", path = "/fields/System.State", value = "New" },
+            new { op = "add", path = "/fields/System.IterationPath", value = task.IterationPath },
             new {
                 op = "add",
                 path = "/relations/-",

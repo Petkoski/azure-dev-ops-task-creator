@@ -11,6 +11,7 @@ public class TaskLine
     public float RemainingWork { get; set; }
     public List<string> Tags { get; set; } = [];
     public string State { get; set; } = string.Empty;
+    public string IterationPath { get; set; } = string.Empty;
 
     public static TaskLine Parse(string line)
     {
@@ -46,6 +47,7 @@ public class TaskLine
             RemainingWork = float.Parse(parts[4]),
             Tags = tags,
             State = TrimQuotes(parts[6]),
+            IterationPath = TrimQuotes(parts[7]),
         };
     }
 }
