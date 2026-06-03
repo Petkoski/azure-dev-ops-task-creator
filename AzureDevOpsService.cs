@@ -31,8 +31,6 @@ public class AzureDevOpsService
         {
             new { op = "add", path = "/fields/System.Title", value = task.Title },
             new { op = "add", path = "/fields/System.Description", value = task.Description },
-            new { op = "add", path = "/fields/Microsoft.VSTS.Scheduling.OriginalEstimate", value = task.OriginalEstimate },
-            new { op = "add", path = "/fields/Microsoft.VSTS.Scheduling.RemainingWork", value = task.RemainingWork },
             new { op = "add", path = "/fields/System.Tags", value = string.Join(";", task.Tags) },
             new { op = "add", path = "/fields/System.State", value = "New" },
             new { op = "add", path = "/fields/System.IterationPath", value = task.IterationPath },
@@ -42,10 +40,21 @@ public class AzureDevOpsService
                 value = new {
                     rel = "System.LinkTypes.Hierarchy-Reverse",
                     url = $"https://dev.azure.com/{_org}/{_project}/_apis/wit/workItems/{task.ParentId}",
-                    attributes = new { comment = "Link to parent user story" }
+                    attributes = new { comment = "Link to parent user story" },
                 }
             },
         };
+
+        if (task.OriginalEstimate.HasValue)
+        {
+            patchDocument.Add(new { op = "add", path = "/fields/Microsoft.VSTS.Scheduling.OriginalEstimate", value = (object)task.OriginalEstimate.Value });
+        }
+
+        if (task.RemainingWork.HasValue)
+        {
+            patchDocument.Add(new { op = "add", path = "/fields/Microsoft.VSTS.Scheduling.RemainingWork", value = (object)task.RemainingWork.Value });
+        }
+
         var content = new StringContent(JsonSerializer.Serialize(patchDocument), Encoding.UTF8, "application/json-patch+json");
 
         var response = await _client.PatchAsync(url, content);

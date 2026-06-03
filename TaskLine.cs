@@ -7,8 +7,8 @@ public class TaskLine
     public int ParentId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public float OriginalEstimate { get; set; }
-    public float RemainingWork { get; set; }
+    public float? OriginalEstimate { get; set; }
+    public float? RemainingWork { get; set; }
     public List<string> Tags { get; set; } = [];
     public string State { get; set; } = string.Empty;
     public string IterationPath { get; set; } = string.Empty;
@@ -43,8 +43,8 @@ public class TaskLine
             ParentId = int.Parse(parts[0]),
             Title = TrimQuotes(parts[1]),
             Description = TrimQuotes(parts[2]),
-            OriginalEstimate = float.Parse(parts[3]),
-            RemainingWork = float.Parse(parts[4]),
+            OriginalEstimate = float.TryParse(parts[3], out var originalEstimateResult) ? originalEstimateResult : null,
+            RemainingWork = float.TryParse(parts[4], out var remainingWorkResult) ? remainingWorkResult : null,
             Tags = tags,
             State = TrimQuotes(parts[6]),
             IterationPath = TrimQuotes(parts[7]),
